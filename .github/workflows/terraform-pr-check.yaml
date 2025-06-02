@@ -1,0 +1,36 @@
+name: Terraform PR Check
+
+on:
+  pull_request:
+    paths:
+      - '**/*.tf'
+      - 'test/**'
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    container:
+      image: registry.digitalocean.com/scale-with-simplicity-test/terraform-test:latest
+      credentials:
+        username: solutions@digitalocean.com
+        password: ${{ secrets.TEST_DIGITALOCEAN_ACCESS_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Run linting
+        run: make lint
+
+  terratest:
+    name: Terratest Unit Tests
+    runs-on: ubuntu-latest
+    container:
+      image: registry.digitalocean.com/scale-with-simplicity-test/terraform-test:latest
+      credentials:
+        username: solutions@digitalocean.com
+        password: ${{ secrets.TEST_DIGITALOCEAN_ACCESS_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Unit Tests
+        run: make test-unit
