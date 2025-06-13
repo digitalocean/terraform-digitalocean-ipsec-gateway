@@ -20,6 +20,7 @@ resource "digitalocean_droplet" "vpn_gateway" {
     vpn_psk       = var.vpn_psk
     do_vpn_ip     = var.reserved_ip
     remote_vpn_ip = var.remote_vpn_ip
+    remote_vpn_cidr = var.remote_vpn_cidr
     setup_vpn_script = local.setup_vpn_script_indented
     add_netplan_script = local.add_netplan_script_indented
   })

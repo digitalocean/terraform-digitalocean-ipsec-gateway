@@ -69,3 +69,12 @@ variable "remote_vpn_ip" {
     error_message = "Must be a valid IPv4 address."
   }
 }
+
+variable "remote_vpn_cidr" {
+  description = "The CIDR of the remote network reachable via the VPN"
+  type        = string
+  validation {
+    condition     = can(cidrnetmask(var.remote_vpn_cidr))
+    error_message = "Must be a valid IPv4 CIDR."
+  }
+}

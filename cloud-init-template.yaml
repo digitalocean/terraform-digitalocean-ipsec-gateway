@@ -43,11 +43,6 @@ write_files:
     content: |
       ${do_vpn_ip} ${remote_vpn_ip} : PSK "${vpn_psk}"
 
-  - path: /usr/local/bin/add-netplan-route.sh
-    permissions: '0755'
-    content: |
-${add_netplan_script}
-
   - path: /root/setup-vpn.sh
     permissions: '0755'
     content: |
@@ -55,4 +50,4 @@ ${setup_vpn_script}
 
 runcmd:
   - wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq && chmod +x /usr/local/bin/yq
-  - /root/setup-vpn.sh ${do_vpn_ip} ${remote_vpn_ip}
+  - /root/setup-vpn.sh ${do_vpn_ip} ${remote_vpn_ip} ${remote_vpn_cidr}

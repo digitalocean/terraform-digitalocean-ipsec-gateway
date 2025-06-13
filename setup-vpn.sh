@@ -4,6 +4,7 @@ set -euxo pipefail
 # Input arguments
 DO_VPN_IP="$1"
 REMOTE_VPN_IP="$2"
+REMOTE_CIDR="$3"
 
 # Get metadata
 ANCHOR_IP=$(curl -s http://169.254.169.254/metadata/v1/interfaces/public/0/anchor_ipv4/address)
@@ -35,6 +36,8 @@ systemctl enable netfilter-persistent.service
 ip link add Tunnel1 type vti local "${ANCHOR_IP}" remote "${REMOTE_VPN_IP}" key 100
 ip addr add 169.254.104.102/30 remote 169.254.104.101/30 dev Tunnel1
 ip link set Tunnel1 up mtu 1419
+ip route add "${REMOTE_CIDR}" dev Tunnel1
+
 
 ## Prevent auto route installation by strongSwan
 sed -i "s/\s# install_routes = yes/\ install_routes = no/g" /etc/strongswan.d/charon.conf
@@ -60,6 +63,8 @@ iface Tunnel1 inet manual
   pre-up ip link add Tunnel1 type vti local ${ANCHOR_IP} remote ${REMOTE_VPN_IP} key 100
   pre-up ip addr add 169.254.104.102/30 remote 169.254.104.101/30 dev Tunnel1
   up ip link set Tunnel1 up mtu 1419
+  up ip route add ${REMOTE_CIDR} dev Tunnel1
+  down ip route del ${REMOTE_CIDR} dev Tunnel1
 EOF
 
 ipsec stop
