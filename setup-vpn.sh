@@ -2,9 +2,11 @@
 set -euxo pipefail
 
 # Input arguments
-DO_VPN_IP="$1"
-REMOTE_VPN_IP="$2"
-REMOTE_CIDR="$3"
+DO_VPN_PUBLIC_IP="$1"
+DO_VPN_TUNNEL_IP="$2"
+REMOTE_VPN_PUBLIC_IP="$3"
+REMOTE_VPN_TUNNEL_IP="$4"
+REMOTE_CIDR="$5"
 
 # Get metadata
 ANCHOR_IP=$(curl -s http://169.254.169.254/metadata/v1/interfaces/public/0/anchor_ipv4/address)
@@ -33,8 +35,8 @@ sysctl -p
 systemctl enable netfilter-persistent.service
 
 ## Tunnel Interface
-ip link add Tunnel1 type vti local "${ANCHOR_IP}" remote "${REMOTE_VPN_IP}" key 100
-ip addr add 169.254.104.102/30 remote 169.254.104.101/30 dev Tunnel1
+ip link add Tunnel1 type vti local "${ANCHOR_IP}" remote "${REMOTE_VPN_PUBLIC_IP}" key 100
+ip addr add ${DO_VPN_TUNNEL_IP} remote ${REMOTE_VPN_TUNNEL_IP} dev Tunnel1
 ip link set Tunnel1 up mtu 1419
 ip route add "${REMOTE_CIDR}" dev Tunnel1
 
@@ -44,7 +46,7 @@ sed -i "s/\s# install_routes = yes/\ install_routes = no/g" /etc/strongswan.d/ch
 
 ## Iptables mangle config
 iptables -t mangle -A FORWARD -o Tunnel1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
-iptables -t mangle -A INPUT -p esp -s "${REMOTE_VPN_IP}" -d "${DO_VPN_IP}" -j MARK --set-xmark 100
+iptables -t mangle -A INPUT -p esp -s "${REMOTE_VPN_PUBLIC_IP}" -d "${DO_VPN_PUBLIC_IP}" -j MARK --set-xmark 100
 
 ## More sysctl config
 echo "net.ipv4.conf.Tunnel1.rp_filter=2" >> /etc/sysctl.conf
@@ -60,8 +62,8 @@ iptables-save > /etc/iptables/rules.v4
 cat <<EOF >> /etc/network/interfaces
 auto Tunnel1
 iface Tunnel1 inet manual
-  pre-up ip link add Tunnel1 type vti local ${ANCHOR_IP} remote ${REMOTE_VPN_IP} key 100
-  pre-up ip addr add 169.254.104.102/30 remote 169.254.104.101/30 dev Tunnel1
+  pre-up ip link add Tunnel1 type vti local ${ANCHOR_IP} remote ${REMOTE_VPN_PUBLIC_IP} key 100
+  pre-up ip addr add ${DO_VPN_TUNNEL_IP} remote ${REMOTE_VPN_TUNNEL_IP} dev Tunnel1
   up ip link set Tunnel1 up mtu 1419
   up ip route add ${REMOTE_CIDR} dev Tunnel1
   down ip route del ${REMOTE_CIDR} dev Tunnel1

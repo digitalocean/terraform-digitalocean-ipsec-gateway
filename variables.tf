@@ -52,20 +52,48 @@ variable "vpn_psk" {
   sensitive   = true
 }
 
-variable "reserved_ip" {
-  description = "The IP address of the reserved IP that will be used as the VPN endpoint on the DO site"
+variable "vpn_tunnel_cidr_bits" {
+  description = "Number of CIDR bits used for the tunnel subnet. Defaults to /30"
+  type = string
+  default = "30"
+  validation {
+    condition     = can(tonumber(var.vpn_tunnel_cidr_bits))
+    error_message = "vpn_tunnel_cidr_bits must be a numeric string (e.g. \"30\"); \"/30\" is not allowed."
+  }
+}
+
+variable "do_vpn_public_ip" {
+  description = "The Public Reserved IP address of the IP that will be used as the VPN endpoint on the DO side. This is the 'outside' IP address of the DO side."
   type        = string
   validation {
-    condition     = can(cidrnetmask(join("/", [var.reserved_ip, "32"])))
+    condition     = can(cidrnetmask(join("/", [var.do_vpn_public_ip, "32"])))
     error_message = "Must be a valid IPv4 address."
   }
 }
 
-variable "remote_vpn_ip" {
-  description = "The IP address of the IP that will be used as the VPN endpoint on the remote site"
+variable "do_vpn_tunnel_ip" {
+  description = "The IP address of the IP that will be used as the Tunnel interface on the DO side. This is the 'inside' IP address of the DO side."
   type        = string
   validation {
-    condition     = can(cidrnetmask(join("/", [var.remote_vpn_ip, "32"])))
+    condition     = can(cidrnetmask(join("/", [var.do_vpn_tunnel_ip, "32"])))
+    error_message = "Must be a valid IPv4 address."
+  }
+}
+
+variable "remote_vpn_public_ip" {
+  description = "The Public IP address of the IP that will be used as the VPN endpoint on the remote side.This is the 'outside' IP address of the remote side."
+  type        = string
+  validation {
+    condition     = can(cidrnetmask(join("/", [var.remote_vpn_public_ip, "32"])))
+    error_message = "Must be a valid IPv4 address."
+  }
+}
+
+variable "remote_vpn_tunnel_ip" {
+  description = "The IP address of the IP that will be used as the Tunnel interface on the remote side. This is the 'inside' IP address of the remote side."
+  type        = string
+  validation {
+    condition     = can(cidrnetmask(join("/", [var.remote_vpn_tunnel_ip, "32"])))
     error_message = "Must be a valid IPv4 address."
   }
 }
