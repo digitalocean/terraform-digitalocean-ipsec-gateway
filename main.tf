@@ -29,3 +29,27 @@ resource "digitalocean_reserved_ip_assignment" "reserved_ip_assignment" {
   ip_address = var.do_vpn_public_ip
   droplet_id = digitalocean_droplet.vpn_gateway.id
 }
+
+resource "digitalocean_firewall" "vpn_fw" {
+  name = var.name
+  droplet_ids = [digitalocean_droplet.vpn_gateway.id]
+  inbound_rule {
+    protocol         = "tcp"
+    port_range       = "1-65535"
+    source_addresses = var.allowed_firewall_cidrs
+  }
+  inbound_rule {
+    protocol         = "udp"
+    port_range       = "1-65535"
+    source_addresses = var.allowed_firewall_cidrs
+  }
+  inbound_rule {
+    protocol         = "icmp"
+    source_addresses = var.allowed_firewall_cidrs
+  }
+  inbound_rule {
+    protocol         = "udp"
+    port_range       = "1-65535"
+    source_addresses = [var.remote_vpn_public_ip]
+  }
+}

@@ -106,3 +106,9 @@ variable "remote_vpn_cidr" {
     error_message = "Must be a valid IPv4 CIDR."
   }
 }
+
+variable "allowed_firewall_cidrs" {
+  description = "A list of the CIDRs on the DO Side which you which should be allowed by the Cloud Firewall to the VPN GW. Defaults to all RFC1918 CIDRS"
+  type = list(string)
+  default = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+}
