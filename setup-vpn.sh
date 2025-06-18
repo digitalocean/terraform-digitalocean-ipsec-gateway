@@ -69,5 +69,6 @@ iface Tunnel1 inet manual
   down ip route del ${REMOTE_CIDR} dev Tunnel1
 EOF
 
+systemctl restart vpc-peering.service
 ipsec stop
 ipsec start

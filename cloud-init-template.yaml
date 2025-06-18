@@ -7,13 +7,8 @@ package_reboot_if_required: true
 packages:
   - iptables-persistent
   - strongswan
-  - curl
-  - collectd
-  - conntrack
-  - net-tools
-  - iperf3
   - ifupdown
-  - wget
+  - curl
 
 write_files:
   - path: /etc/ipsec.d/vpn.conf
@@ -49,5 +44,5 @@ write_files:
 ${setup_vpn_script}
 
 runcmd:
-  - wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq && chmod +x /usr/local/bin/yq
+  - curl -L https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/local/bin/yq && chmod +x /usr/local/bin/yq
   - /root/setup-vpn.sh "${do_vpn_public_ip}" "${do_vpn_tunnel_ip}/${vpn_tunnel_cidr}" "${remote_vpn_public_ip}" "${remote_vpn_tunnel_ip}/${vpn_tunnel_cidr}" "${remote_vpn_cidr}"
