@@ -1,101 +1,76 @@
-# terraform-digitalocean-ipsec-gateway
+## Tterraform-digitalocean-ipsec-gateway
 
-A Terraform module that deploys a droplet configured with [strongSwan](https://strongswan.org/) that can server as a IPSEC VPN Gateway for your VPC.
+This Terraform module provisions a DigitalOcean Droplet and configures it as an IPSec VPN Gateway using strongSwan and cloud-init. The Droplet is set up to establish a site-to-site VPN tunnel with a remote peer, allowing secure routing of traffic between private networks.
 
+### How It Works
 
+1. **Droplet Provisioning**: The module creates a DigitalOcean Droplet with the specified image, size, region, VPC, SSH keys, and tags.
+2. **Cloud-Init Orchestration**: A single `cloud-init` run performs all provisioning and configuration steps:
+    * Installs required packages (`iptables-persistent`, `strongswan`, `ifupdown`, `curl`).
+    * Generates strongSwan configuration files (`/etc/ipsec.d/vpn.conf`) and PSK secrets (`/etc/ipsec.secrets`).
+    * Uploads and executes the VPN setup script (`setup-vpn.sh`), which:
+        * Retrieves the Droplet’s Anchor IP and gateway via metadata.
+        * Sets the default route through the Anchor IP gateway.
+        * Enables IP forwarding and configures NAT for private networks.
+        * Adjusts sysctl parameters for proper tunnel operation.
+        * Creates the VTI tunnel interface (`Tunnel1`) and routes the remote CIDR.
+    * Ensures NAT rules and network interfaces persist across reboots.&#x20;
 
+### Important Details
 
+* **Reserved IP Requirement**: A DigitalOcean Reserved IP must be created and used as the public IP (`do_vpn_public_ip`) for the VPN Droplet. Reserved IPs are managed separately from Droplet resources, allowing you to destroy or recreate the Droplet while retaining the same public IP. This ensures the remote peer configuration remains valid and provides operational flexibility.
 
+* **Routing Configuration**: Other Droplets or DOKS nodes must be configured to route desired CIDRs via this VPN gateway. On DOKS, enable and configure the [DigitalOcean Routing Agent](https://docs.digitalocean.com/products/kubernetes/how-to/use-routing-agent/) to add routes automatically.
 
+* **Warning: Cloud-Init Changes**: Because the Droplet is provisioned and configured via `cloud-init`, any modification to the `cloud-init` template or related settings will trigger Droplet recreation. This changes the Droplet's private IP, requiring you to update all routes pointing to the VPN gateway. Examples of such changes include updating the PSK or modifying the remote CIDR.
 
+### Usage Example
 
+```hcl
+module "vpn_gateway_droplet" {
+  source               = "github.com/digitalocean/terraform-digitalocean-ipsec-gateway"
 
+  # Droplet settings
+  name                 = "prod-vgw"
+  image                = "ubuntu-20-04-x64"
+  size                 = "s-1vcpu-2gb"
+  region               = "nyc3"
+  vpc_id               = "0bcef6a5-0000-0000-0000-000000000000"
+  ssh_keys             = [123456]
+  tags                 = ["prod"]
 
-* **Regional Load Balancers (LBs)** – one per region you supply.
-* A **Global Load Balancer** that fronts the regional LBs and provides worldwide anycast IPs, automatic fail‑over, optional CDN, and HTTPS offload.
-* **Optional DNS records** – A‑records that map each region’s two‑letter slug (e.g. `nyc3`) to the LB’s public IP so you can reach a region directly (`nyc3.example.com`).
-
-# Example
-
-```terraform
-module "glb_stack" {
-  source  = "github.com/digitalocean/terraform-digitalocean-glb-stack"
-
-  name_prefix = "test"
-
-  ## ――― Regional settings ―――
-  regions = [
-    {
-      region   = "nyc3"
-      vpc_uuid = "0bcef6a5-c2ed-466d-bedd-000000000000"
-    },
-    {
-      region   = "sfo3"
-      vpc_uuid = "b6ef6914-0412-495d-a3db-000000000000"
-    },
-    {
-      region   = "ams3"
-      vpc_uuid = "73abe0ad-ded0-4ce4-bb26-000000000000"
-    }
-  ]
-
-  ## Create one A‑record per regional LB: nyc3.example.com ➜ 203.0.113.10, etc.
-  region_dns_records = true
-
-  ## ――― Per‑region load balancer config ―――
-  regional_lb_config = {
-    redirect_http_to_https = true
-
-    forwarding_rule = {
-      entry_port     = 443
-      entry_protocol = "https"
-      target_port    = 80
-      target_protocol = "http"
-    }
-
-    healthcheck = {
-      port     = 80
-      protocol = "http"
-      path      = "/"
-    }
-
-    droplet_tag = "test"
-  }
-
-  ## ――― Global load balancer config ―――
-  global_lb_config = {
-    redirect_http_to_https = true
-
-    domains = [{
-      name       = "test.do.com"   # the public hostname of the GLB
-      is_managed = true            # create / manage the DO DNS zone
-    }]
-
-    glb_settings = {
-      target_protocol = "https"
-      target_port     = 443
-      cdn = {
-        is_enabled = true
-      }
-    }
-
-    healthcheck = {
-      port     = 443
-      protocol = "https"
-      path      = "/"
-    }
-  }
+  # VPN configuration
+  do_vpn_public_ip     = "1.1.1.1"
+  do_vpn_tunnel_ip     = "169.254.104.102"
+  remote_vpn_public_ip = "2.2.2.2"
+  remote_vpn_tunnel_ip = "169.254.104.101"
+  remote_vpn_cidr      = "192.168.100.0/24"
+  vpn_psk              = "ThisIsASecret"
 }
 ```
 
-The example spins up three regional LBs (NYC3, SFO3, AMS3), builds a single GLB in front of them, and optionally creates `nyc3.test.do.com`, `sfo3.test.do.com`, and `ams3.test.do.com` DNS records that point at each regional LB.
+### Inputs
 
-# Inputs
+| Name                   | Description                                                         | Type           | Default | Required |
+| ---------------------- | ------------------------------------------------------------------- | -------------- | ------- | -------- |
+| `name`                 | Name of the Droplet                                                 | `string`       | n/a     | yes      |
+| `image`                | Droplet image slug (e.g., `ubuntu-20-04-x64`)                       | `string`       | n/a     | yes      |
+| `size`                 | Droplet size (e.g., `s-1vcpu-2gb`)                                  | `string`       | n/a     | yes      |
+| `region`               | DigitalOcean region (e.g., `nyc3`)                                  | `string`       | n/a     | yes      |
+| `vpc_id`               | VPC UUID to attach the Droplet                                      | `string`       | n/a     | yes      |
+| `ssh_keys`             | List of SSH key IDs or fingerprints                                 | `list(string)` | `[]`    | no       |
+| `tags`                 | List of tags to assign to the Droplet                               | `list(string)` | `[]`    | no       |
+| `do_vpn_public_ip`     | Reserved (public) IP for the VPN endpoint on DigitalOcean side.     | `string`       | n/a     | yes      |
+| `do_vpn_tunnel_ip`     | Private VTI tunnel IP for the Droplet (e.g., `169.254.104.102`)     | `string`       | n/a     | yes      |
+| `vpn_tunnel_cidr`      | CIDR mask bits for the tunnel interface (without slash)             | `string`       | `"30"`  | no       |
+| `remote_vpn_public_ip` | Public IP of the remote VPN endpoint                                | `string`       | n/a     | yes      |
+| `remote_vpn_tunnel_ip` | Private VTI tunnel IP for the remote peer (e.g., `169.254.104.101`) | `string`       | n/a     | yes      |
+| `remote_vpn_cidr`      | Remote private network CIDR to route through the tunnel             | `string`       | n/a     | yes      |
+| `vpn_psk`              | Pre-shared key for IPsec authentication                             | `string`       | n/a     | yes      |
 
-| Name                 | Description                                                                                                                                                                                     | Type                                                   | Default | Required |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ------- | :------: |
-| `name_prefix`        | Prefix applied to all load balancer names (e.g. `test-nyc3`).                                                                                                                                   | `string`                                               | n/a     |  **yes** |
-| `regions`            | List of regions & VPC UUIDs to deploy to.<br>`[{ region = "nyc3", vpc_uuid = "..." }, …]`                                                                                                       | `list(object({ region = string, vpc_uuid = string }))` | n/a     |  **yes** |
-| `region_dns_records` | Create an `A` record for each regional LB using the first domain in `global_lb_config.domains[*].name`.                                                                                         | `bool`                                                 | `false` |    no    |
-| `regional_lb_config` | Map of arguments passed to **every** regional load balancer (forwarding rules, health‑checks, tags, etc.). See [DO LB docs](https://docs.digitalocean.com/products/networking/load-balancers/). | `any`                                                  | n/a     |  **yes** |
-| `global_lb_config`   | Map of arguments for the GLB (domains, health‑check, GLB settings, etc.). Must include exactly **one** item in `domains`.                                                                       | `any`                                                  | n/a     |  **yes** |
+### Outputs
+
+| Name                               | Description                                   |
+| ---------------------------------- | --------------------------------------------- |
+| `vpn_gateway_id`                   | ID of the created Droplet                     |
+| `vpn_gateway_ipv4_address_private` | Private IP address of the VPN Gateway Droplet |
