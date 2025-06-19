@@ -1,5 +1,5 @@
 locals {
-  setup_vpn_script         = file("${path.module}/setup-vpn.sh")
+  setup_vpn_script          = file("${path.module}/setup-vpn.sh")
   setup_vpn_script_indented = join("\n", [for line in split("\n", local.setup_vpn_script) : "      ${line}"])
 }
 
@@ -14,14 +14,14 @@ resource "digitalocean_droplet" "vpn_gateway" {
   vpc_uuid   = var.vpc_id
   tags       = var.tags
   user_data = templatefile("${path.module}/cloud-init-template.yaml", {
-    vpn_psk       = var.vpn_psk
-    vpn_tunnel_cidr = var.vpn_tunnel_cidr_bits
+    vpn_psk              = var.vpn_psk
+    vpn_tunnel_cidr      = var.vpn_tunnel_cidr_bits
     do_vpn_public_ip     = var.do_vpn_public_ip
-    do_vpn_tunnel_ip = var.do_vpn_tunnel_ip
+    do_vpn_tunnel_ip     = var.do_vpn_tunnel_ip
     remote_vpn_public_ip = var.remote_vpn_public_ip
     remote_vpn_tunnel_ip = var.remote_vpn_tunnel_ip
-    remote_vpn_cidr = var.remote_vpn_cidr
-    setup_vpn_script = local.setup_vpn_script_indented
+    remote_vpn_cidr      = var.remote_vpn_cidr
+    setup_vpn_script     = local.setup_vpn_script_indented
   })
 }
 
@@ -31,7 +31,7 @@ resource "digitalocean_reserved_ip_assignment" "reserved_ip_assignment" {
 }
 
 resource "digitalocean_firewall" "vpn_fw" {
-  name = var.name
+  name        = var.name
   droplet_ids = [digitalocean_droplet.vpn_gateway.id]
   inbound_rule {
     protocol         = "tcp"

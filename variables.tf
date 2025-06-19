@@ -54,8 +54,8 @@ variable "vpn_psk" {
 
 variable "vpn_tunnel_cidr_bits" {
   description = "Number of CIDR bits used for the tunnel subnet. Defaults to /30"
-  type = string
-  default = "30"
+  type        = string
+  default     = "30"
   validation {
     condition     = can(tonumber(var.vpn_tunnel_cidr_bits))
     error_message = "vpn_tunnel_cidr_bits must be a numeric string (e.g. \"30\"); \"/30\" is not allowed."
@@ -109,6 +109,6 @@ variable "remote_vpn_cidr" {
 
 variable "allowed_firewall_cidrs" {
   description = "A list of the CIDRs on the DO Side which you which should be allowed by the Cloud Firewall to the VPN GW. Defaults to all RFC1918 CIDRS"
-  type = list(string)
-  default = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+  type        = list(string)
+  default     = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
 }
