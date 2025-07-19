@@ -53,17 +53,17 @@ resource "digitalocean_firewall" "vpn_fw" {
     source_addresses = [var.remote_vpn_public_ip]
   }
   outbound_rule {
-    protocol         = "tcp"
-    port_range       = "1-65535"
+    protocol              = "tcp"
+    port_range            = "1-65535"
     destination_addresses = ["0.0.0.0/0", "::/0"]
   }
   outbound_rule {
-    protocol         = "udp"
-    port_range       = "1-65535"
+    protocol              = "udp"
+    port_range            = "1-65535"
     destination_addresses = ["0.0.0.0/0", "::/0"]
   }
   outbound_rule {
-    protocol         = "icmp"
+    protocol              = "icmp"
     destination_addresses = ["0.0.0.0/0", "::/0"]
   }
 }
