@@ -46,3 +46,6 @@ ${setup_vpn_script}
 runcmd:
   - curl -L https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/local/bin/yq && chmod +x /usr/local/bin/yq
   - /root/setup-vpn.sh "${do_vpn_public_ip}" "${do_vpn_tunnel_ip}/${vpn_tunnel_cidr}" "${remote_vpn_public_ip}" "${remote_vpn_tunnel_ip}/${vpn_tunnel_cidr}" "${remote_vpn_cidr}"
+  # Ensure networking is up and running
+  - /var/lib/cloud/scripts/peering.sh
+  - systemctl restart strongswan-starter.service
