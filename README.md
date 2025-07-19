@@ -22,6 +22,8 @@ This Terraform module provisions a DigitalOcean Droplet and configures it as an 
 
 * **Routing Configuration**: Other Droplets or DOKS nodes must be configured to route desired CIDRs via this VPN gateway. On DOKS, enable and configure the [DigitalOcean Routing Agent](https://docs.digitalocean.com/products/kubernetes/how-to/use-routing-agent/) to add routes automatically.
 
+* **SSH Access**: You must create a firewall to allow access to allow SSH to the Droplet from outside the VPC.
+
 * **Warning: Cloud-Init Changes**: Because the Droplet is provisioned and configured via `cloud-init`, any modification to the `cloud-init` template or related settings will trigger Droplet recreation. This changes the Droplet's private IP, requiring you to update all routes pointing to the VPN gateway. Examples of such changes include updating the PSK or modifying the remote CIDR.
 
 ### Usage Example
@@ -51,22 +53,23 @@ module "vpn_gateway_droplet" {
 
 ### Inputs
 
-| Name                   | Description                                                         | Type           | Default | Required |
-| ---------------------- | ------------------------------------------------------------------- | -------------- | ------- | -------- |
-| `name`                 | Name of the Droplet                                                 | `string`       | n/a     | yes      |
-| `image`                | Droplet image slug (e.g., `ubuntu-20-04-x64`)                       | `string`       | n/a     | yes      |
-| `size`                 | Droplet size (e.g., `s-1vcpu-2gb`)                                  | `string`       | n/a     | yes      |
-| `region`               | DigitalOcean region (e.g., `nyc3`)                                  | `string`       | n/a     | yes      |
-| `vpc_id`               | VPC UUID to attach the Droplet                                      | `string`       | n/a     | yes      |
-| `ssh_keys`             | List of SSH key IDs or fingerprints                                 | `list(string)` | `[]`    | no       |
-| `tags`                 | List of tags to assign to the Droplet                               | `list(string)` | `[]`    | no       |
-| `do_vpn_public_ip`     | Reserved (public) IP for the VPN endpoint on DigitalOcean side.     | `string`       | n/a     | yes      |
-| `do_vpn_tunnel_ip`     | Private VTI tunnel IP for the Droplet (e.g., `169.254.104.102`)     | `string`       | n/a     | yes      |
-| `vpn_tunnel_cidr`      | CIDR mask bits for the tunnel interface (without slash)             | `string`       | `"30"`  | no       |
-| `remote_vpn_public_ip` | Public IP of the remote VPN endpoint                                | `string`       | n/a     | yes      |
-| `remote_vpn_tunnel_ip` | Private VTI tunnel IP for the remote peer (e.g., `169.254.104.101`) | `string`       | n/a     | yes      |
-| `remote_vpn_cidr`      | Remote private network CIDR to route through the tunnel             | `string`       | n/a     | yes      |
-| `vpn_psk`              | Pre-shared key for IPsec authentication                             | `string`       | n/a     | yes      |
+| Name                     | Description                                                                                                              | Type           | Default                                             | Required |
+|--------------------------|--------------------------------------------------------------------------------------------------------------------------|----------------|-----------------------------------------------------|----------|
+| `name`                   | Name of the Droplet                                                                                                      | `string`       | n/a                                                 | yes      |
+| `image`                  | Droplet image slug (e.g., `ubuntu-24-04-x64`)                                                                            | `string`       | `ubuntu-24-04-x64`                                  | no       |
+| `size`                   | Droplet size (e.g., `s-1vcpu-2gb`)                                                                                       | `string`       | n/a                                                 | yes      |
+| `region`                 | DigitalOcean region (e.g., `nyc3`)                                                                                       | `string`       | n/a                                                 | yes      |
+| `vpc_id`                 | VPC UUID to attach the Droplet                                                                                           | `string`       | n/a                                                 | yes      |
+| `ssh_keys`               | List of SSH key IDs or fingerprints                                                                                      | `list(string)` | `[]`                                                | no       |
+| `tags`                   | List of tags to assign to the Droplet                                                                                    | `list(string)` | `[]`                                                | no       |
+| `do_vpn_public_ip`       | Reserved (public) IP for the VPN endpoint on DigitalOcean side.                                                          | `string`       | n/a                                                 | yes      |
+| `do_vpn_tunnel_ip`       | Private VTI tunnel IP for the Droplet (e.g., `169.254.104.102`)                                                          | `string`       | n/a                                                 | yes      |
+| `vpn_tunnel_cidr`        | CIDR mask bits for the tunnel interface (without slash)                                                                  | `string`       | `"30"`                                              | no       |
+| `remote_vpn_public_ip`   | Public IP of the remote VPN endpoint                                                                                     | `string`       | n/a                                                 | yes      |
+| `remote_vpn_tunnel_ip`   | Private VTI tunnel IP for the remote peer (e.g., `169.254.104.101`)                                                      | `string`       | n/a                                                 | yes      |
+| `remote_vpn_cidr`        | Remote private network CIDR to route through the tunnel                                                                  | `string`       | n/a                                                 | yes      |
+| `vpn_psk`                | Pre-shared key for IPSec authentication                                                                                  | `string`       | n/a                                                 | yes      |
+| `allowed_firewall_cidrs` | CIDRs to allow through the firewall to the Droplet. Defaults to all private IP address ranges to support any VPC config. | `list(string)` | `["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]` | No       |
 
 ### Outputs
 

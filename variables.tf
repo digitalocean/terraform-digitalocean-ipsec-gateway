@@ -14,8 +14,9 @@ variable "size" {
 }
 
 variable "image" {
-  description = "DO image slug to run on the droplet, must be ubuntu based."
+  description = "DO image slug to run on the droplet, must be ubuntu based. Defaults to ubuntu-24-04"
   type        = string
+  default     = "ubuntu-24-04-x64"
 
   validation {
     condition     = startswith(var.image, "ubuntu")
