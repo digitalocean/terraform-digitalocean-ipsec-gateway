@@ -1,4 +1,4 @@
-## Tterraform-digitalocean-ipsec-gateway
+## Terraform-digitalocean-ipsec-gateway
 
 This Terraform module provisions a DigitalOcean Droplet and configures it as an IPSec VPN Gateway using strongSwan and cloud-init. The Droplet is set up to establish a site-to-site VPN tunnel with a remote peer, allowing secure routing of traffic between private networks.
 
@@ -77,3 +77,7 @@ module "vpn_gateway_droplet" {
 | ---------------------------------- | --------------------------------------------- |
 | `vpn_gateway_id`                   | ID of the created Droplet                     |
 | `vpn_gateway_ipv4_address_private` | Private IP address of the VPN Gateway Droplet |
+
+# Support
+
+This Terraform module is provided as a reference implementation and must be fully tested in your own environment before using it in production. The Terraform Provider and its resources are supported, but this module itself is not officially supported.
