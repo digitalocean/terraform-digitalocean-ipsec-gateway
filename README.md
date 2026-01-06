@@ -1,3 +1,14 @@
+> [!WARNING]
+> ## This repository is deprecated
+>
+> This module has been consolidated into the [scale-with-simplicity](https://github.com/digitalocean/scale-with-simplicity) repository.
+>
+> **New location:** [modules/ipsec-gateway](https://github.com/digitalocean/scale-with-simplicity/tree/main/modules/ipsec-gateway)
+>
+> This repository will be archived. Please update your module references to use the new location.
+
+---
+
 ## Terraform-digitalocean-ipsec-gateway
 
 This Terraform module provisions a DigitalOcean Droplet and configures it as an IPSec VPN Gateway using strongSwan and cloud-init. The Droplet is set up to establish a site-to-site VPN tunnel with a remote peer, allowing secure routing of traffic between private networks.
